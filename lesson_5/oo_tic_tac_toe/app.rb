@@ -4,24 +4,46 @@ marking a square. The first player to mark 3 squares in a row wins.
 =end
 
 class Board
-  def initialize
-    @rows_top_to_bottom = [
-      Array.new(3){Square.new},
-      Array.new(3){Square.new},
-      Array.new(3){Square.new}
-    ]
-    # we need some way to model the 3x3 grid. Maybe "squares"?
-    # what data structure should we use?
-    # - array/hash of Square objects?
-    # - array/hash of strings or integers?
-  end
-
   FIVE_SPACES = "     "
   MARK_X = "  X  "
   MARK_O = "  O  "
   COLUMN_DIVIDER = "|"
   ROW_DIVIDER = "-----+-----+-----"
   EMPTY_ROW = FIVE_SPACES + COLUMN_DIVIDER + FIVE_SPACES + COLUMN_DIVIDER + FIVE_SPACES
+
+  attr_reader :rows_top_to_bottom, :open_squares
+  def initialize
+    @rows_top_to_bottom = [
+      Array.new(3){Square.new},
+      Array.new(3){Square.new},
+      Array.new(3){Square.new}
+    ]
+  end
+
+  def update_squares square_to_update, player
+    return unless (0..8).any? square_to_update
+    idx_1, idx_2 = square_to_update.divmod 3
+    puts "player marker"
+    puts player.marker
+    @rows_top_to_bottom[idx_1][idx_2].status = player.marker
+    p @rows_top_to_bottom
+    # @rows_top_to_bottom.each {|row| row.each {|square| p square.status}}
+    # p "hello"
+    # return
+  end
+
+  def open_squares
+    @rows_top_to_bottom.flatten.filter_map.with_index do |square, idx|
+      # puts idx
+      # p square.status.nil?
+      # puts "---"
+      idx if square.status.nil?
+    end
+  end
+
+  def open_square? requested_square
+    open_squares.any? requested_square
+  end
 
   def display
     13.times do |row_level|
@@ -58,28 +80,73 @@ class Board
 end
 
 class Square
-  attr_reader :status
+  attr_accessor :status
   def initialize
-    @status
+    @status = nil
     # maybe a "status" to keep track of this square's mark?
   end
 end
 
 class Player
-  def initialize
+  attr_reader :marker
+  def initialize name, marker
+    @name   = name
+    @marker = marker
     # maybe a "marker" to keep track of this player's symbol (ie, 'X' or 'O')
   end
 
   def mark
 
   end
+
+  def select_random_move board
+    computer_move = board.open_squares.sample
+    p board.open_squares.sample
+  end
+
+  def select_move board
+    # puts "hello world!!!"
+    select_move_msg = <<~EOT
+    Human make your move
+    (Input square selection between 0-8)
+      0 | 1 | 2
+      3 | 4 | 5
+      6 | 7 | 8
+    EOT
+    invalid_move_msg = "Invalid move selected, please try again"
+    human_move = ""
+
+    loop do
+      loop do
+        puts select_move_msg
+        human_move = gets.chomp
+        break if (0..8).map(&:to_s).any? human_move
+        puts "Invalid move selected, you must choose an integer between 0-8"
+      end
+      break if valid_move?(board, human_move.to_i)
+      puts "Invalid move selected, that move has already been taken"
+    end
+    human_move.to_i
+  end
+
+  def valid_move? board, requested_move
+    return false unless (0..8).any? requested_move
+    board.open_square?(requested_move)
+    # return false unless (0..8).any? requested_move
+    # return true if board.rows_top_to_bottom.flatten[requested_move].status.nil?
+    # false
+  end
+  private
+
 end
 
 class TTTGame
 
-  attr_reader :board
+  attr_reader :board, :player_human, :player_computer
   def initialize
     @board = Board.new
+    @player_human = Player.new :human, :x
+    @player_computer = Player.new :computer, :o
   end
 
   def display_welcome_message
@@ -95,9 +162,27 @@ class TTTGame
     board.display
   end
 
+  def first_player_moves
+    p board.open_squares
+    first_player_move = player_human.select_move board
+    board.update_squares first_player_move, player_human
+    board.display
+    p board.open_squares
+  end
+
+  def second_player_moves
+    p "----"
+    second_player_move = player_computer.select_random_move board
+    board.update_squares second_player_move, player_computer
+    board.display
+    p board.open_squares
+  end
+
   def play
     display_board
     display_welcome_message
+    first_player_moves
+    second_player_moves
     # loop do
     #   display_board
     #   first_player_moves
