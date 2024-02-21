@@ -20,23 +20,53 @@ class Board
     ]
   end
 
+  def win_condition_met?
+    win_condition_row? || win_condition_column? || win_condition_diagonal?
+  end
+
+  def win_condition_row?
+    rows_top_to_bottom.each do |row|
+      arr_row_statuses = row.map { |square| square.status }
+      next if arr_row_statuses.any? nil
+      return true if arr_row_statuses.uniq.length == 1
+    end
+    false
+  end
+
+  def win_condition_column?
+    columns_left_to_right = rows_top_to_bottom.transpose
+    columns_left_to_right.each do |row|
+      arr_row_statuses = row.map { |square| square.status }
+      next if arr_row_statuses.any? nil
+      return true if arr_row_statuses.uniq.length == 1
+    end
+    false
+  end
+
+  def win_condition_diagonal?
+    arr_topleft_bottomright =
+      rows_top_to_bottom[0][0], rows_top_to_bottom[1][1], rows_top_to_bottom[2][2]
+    arr_bottomleft_topright =
+      rows_top_to_bottom[2][0], rows_top_to_bottom[1][1], rows_top_to_bottom[0][2]
+    diagonals = [arr_topleft_bottomright, arr_bottomleft_topright]
+
+    diagonals.each do |row|
+      arr_row_statuses = row.map { |square| square.status }
+      next if arr_row_statuses.any? nil
+      return true if arr_row_statuses.uniq.length == 1
+    end
+    false
+  end
+
   def update_squares square_to_update, player
     return unless (0..8).any? square_to_update
     idx_1, idx_2 = square_to_update.divmod 3
-    puts "player marker"
-    puts player.marker
     @rows_top_to_bottom[idx_1][idx_2].status = player.marker
-    p @rows_top_to_bottom
-    # @rows_top_to_bottom.each {|row| row.each {|square| p square.status}}
-    # p "hello"
-    # return
+    # p @rows_top_to_bottom
   end
 
   def open_squares
     @rows_top_to_bottom.flatten.filter_map.with_index do |square, idx|
-      # puts idx
-      # p square.status.nil?
-      # puts "---"
       idx if square.status.nil?
     end
   end
@@ -48,7 +78,7 @@ class Board
   def display
     13.times do |row_level|
       case row_level
-      when 0,12 #Board padding
+      when 0,12
         puts "\r\n"
       when 1,3,5,7,9,11
         puts EMPTY_ROW
@@ -101,7 +131,6 @@ class Player
 
   def select_random_move board
     computer_move = board.open_squares.sample
-    p board.open_squares.sample
   end
 
   def select_move board
@@ -144,9 +173,22 @@ class TTTGame
 
   attr_reader :board, :player_human, :player_computer
   def initialize
+    setup
+  end
+
+  def reset
+    setup
+  end
+
+  def setup
     @board = Board.new
     @player_human = Player.new :human, :x
     @player_computer = Player.new :computer, :o
+  end
+
+  def play_again
+    reset()
+    play()
   end
 
   def display_welcome_message
@@ -163,37 +205,65 @@ class TTTGame
   end
 
   def first_player_moves
-    p board.open_squares
     first_player_move = player_human.select_move board
     board.update_squares first_player_move, player_human
     board.display
-    p board.open_squares
   end
 
   def second_player_moves
     p "----"
+    p "Hmm Let me think"
+    sleep(1)
+    puts "."
+    sleep(1)
+    puts "."
+    sleep(1)
+    puts "."
+    sleep(1)
     second_player_move = player_computer.select_random_move board
     board.update_squares second_player_move, player_computer
     board.display
-    p board.open_squares
+  end
+
+  def someone_won?
+    board.win_condition_met?
+  end
+
+  # @rows_top_to_bottom = [
+  #   Array.new(3){Square.new},
+  #   Array.new(3){Square.new},
+  #   Array.new(3){Square.new}
+  # ]
+
+  def board_full?
+    board.open_squares.empty?
   end
 
   def play
     display_board
     display_welcome_message
-    first_player_moves
-    second_player_moves
-    # loop do
-    #   display_board
-    #   first_player_moves
-    #   break if someone_won? || board_full?
+    # first_player_moves
+    # second_player_moves
 
-    #   second_player_moves
-    #   break if someone_won? || board_full?
-    # end
+    winner = loop do
+              first_player_moves
+              break "human" if someone_won?
+              break false if board_full?
+
+              second_player_moves
+              break "computer" if someone_won?
+              break false if board_full?
+            end
+    puts "WE ARE OUT OF THE LOOP!"
+    puts winner ? "#{winner.upcase} has won the game!!!" : "DRAW"
     # display_result
     # display_goodbye_message
+    puts "Let's Play again!!!!"
+    puts "\r\n"
+    puts "\r\n"
+    play_again
   end
+
 end
 
 # we'll kick off the game like this
