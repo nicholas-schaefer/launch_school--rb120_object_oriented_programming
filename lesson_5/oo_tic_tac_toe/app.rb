@@ -62,7 +62,6 @@ class Board
     return unless (0..8).any? square_to_update
     idx_1, idx_2 = square_to_update.divmod 3
     @rows_top_to_bottom[idx_1][idx_2].status = player.marker
-    # p @rows_top_to_bottom
   end
 
   def open_squares
@@ -107,6 +106,7 @@ class Board
       end
     end.join(COLUMN_DIVIDER)
   end
+
 end
 
 class Square
@@ -123,10 +123,6 @@ class Player
     @name   = name
     @marker = marker
     # maybe a "marker" to keep track of this player's symbol (ie, 'X' or 'O')
-  end
-
-  def mark
-
   end
 
   def select_random_move board
@@ -161,11 +157,7 @@ class Player
   def valid_move? board, requested_move
     return false unless (0..8).any? requested_move
     board.open_square?(requested_move)
-    # return false unless (0..8).any? requested_move
-    # return true if board.rows_top_to_bottom.flatten[requested_move].status.nil?
-    # false
   end
-  private
 
 end
 
@@ -214,12 +206,12 @@ class TTTGame
     p "----"
     p "Hmm Let me think"
     sleep(1)
-    puts "."
-    sleep(1)
-    puts "."
-    sleep(1)
-    puts "."
-    sleep(1)
+    # puts "."
+    # sleep(1)
+    # puts "."
+    # sleep(1)
+    # puts "."
+    # sleep(1)
     second_player_move = player_computer.select_random_move board
     board.update_squares second_player_move, player_computer
     board.display
@@ -228,12 +220,6 @@ class TTTGame
   def someone_won?
     board.win_condition_met?
   end
-
-  # @rows_top_to_bottom = [
-  #   Array.new(3){Square.new},
-  #   Array.new(3){Square.new},
-  #   Array.new(3){Square.new}
-  # ]
 
   def board_full?
     board.open_squares.empty?
