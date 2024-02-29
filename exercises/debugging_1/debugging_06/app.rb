@@ -1,89 +1,76 @@
-class Length
-  include Comparable
-  attr_reader :value, :unit
+class GuessingGame
+  MAX_GUESSES = 7
+  RANGE = 1..100
 
-  def initialize(value, unit)
-    @value = value
-    @unit = unit
+  RESULT_OF_GUESS_MESSAGE = {
+    high:  "Your number is too high.",
+    low:   "Your number is too low.",
+    match: "That's the number!"
+  }.freeze
+
+  WIN_OR_LOSE = {
+    high:  :lose,
+    low:   :lose,
+    match: :win
+  }.freeze
+
+  RESULT_OF_GAME_MESSAGE = {
+    win:  "You won!",
+    lose: "You have no more guesses. You lost!"
+  }.freeze
+
+  def initialize
+    @secret_number = nil
   end
 
-  def as_kilometers
-    convert_to(:km, { km: 1, mi: 0.6213711, nmi: 0.539957 })
-  end
-
-  def as_miles
-    convert_to(:mi, { km: 1.609344, mi: 1, nmi: 0.8689762419 })
-  end
-
-  def as_nautical_miles
-    convert_to(:nmi, { km: 1.8519993, mi: 1.15078, nmi: 1 })
-  end
-
-  # def ==(other)
-  #   case unit
-  #   when :km  then value == other.as_kilometers.value
-  #   when :mi  then value == other.as_miles.value
-  #   when :nmi then value == other.as_nautical_miles.value
-  #   end
-  # end
-
-
-  def <=>(other)
-    case unit
-    when :km  then value <=> other.as_kilometers.value
-    when :mi  then value <=> other.as_miles.value
-    when :nmi then value <=> other.as_nautical_miles.value
-    end
-  end
-
-  # def <(other)
-  #   case unit
-  #   when :km  then value < other.as_kilometers.value
-  #   when :mi  then value < other.as_miles.value
-  #   when :nmi then value < other.as_nautical_miles.value
-  #   end
-  # end
-
-  # def <=(other)
-  #   self < other || self == other
-  # end
-
-  # def >(other)
-  #   !(self <= other)
-  # end
-
-  # def >=(other)
-  #   self > other || self == other
-  # end
-
-  def to_s
-    "#{value} #{unit}"
+  def play
+    reset
+    game_result = play_game
+    display_game_end_message(game_result)
   end
 
   private
 
-  def convert_to(target_unit, conversion_factors)
-    Length.new((value / conversion_factors[unit]).round(4), target_unit)
+  def reset
+    @secret_number = rand(RANGE)
+  end
+
+  def play_game
+    result = nil
+    MAX_GUESSES.downto(1) do |remaining_guesses|
+      display_guesses_remaining(remaining_guesses)
+      result = check_guess(obtain_one_guess)
+      puts RESULT_OF_GUESS_MESSAGE[result]
+      break if result == :match
+    end
+    WIN_OR_LOSE[result]
+  end
+
+  def display_guesses_remaining(remaining)
+    puts
+    if remaining == 1
+      puts 'You have 1 guess remaining.'
+    else
+      puts "You have #{remaining} guesses remaining."
+    end
+  end
+
+  def obtain_one_guess
+    loop do
+      print "Enter a number between #{RANGE.first} and #{RANGE.last}: "
+      guess = gets.chomp.to_i
+      return guess if RANGE.cover?(guess)
+      print "Invalid guess. "
+    end
+  end
+
+  def check_guess(guess_value)
+    return :match if guess_value == @secret_number
+    return :low if guess_value < @secret_number
+    :high
+  end
+
+  def display_game_end_message(result)
+    puts "", RESULT_OF_GAME_MESSAGE[result]
   end
 end
-
-# Example
-def app
-  # puts Length.new(1, :mi)
-  # puts Length.new(1, :nmi)
-  # puts Length.new(1, :km)
-  # return
-
-  puts [Length.new(1, :mi), Length.new(1, :nmi), Length.new(1, :km)].sort
-  # => comparison of Length with Length failed (ArgumentError)
-  # expected output:
-  # 1 km
-  # 1 mi
-  # 1 nmi
-end
-app()
-
-=begin
-When attempting to sort an array of various lengths, we are surprised to see that an ArgumentError is raised.
-Make the necessary changes to our code so that the various lengths can be properly sorted and line 62 produces the expected output.
-=end
