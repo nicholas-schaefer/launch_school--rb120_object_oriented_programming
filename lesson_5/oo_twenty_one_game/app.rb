@@ -49,8 +49,18 @@ class PersonAtCasino
     black_jack_round = BlackJackRound.new(
       dealer = black_jack_session.participant_dealer,
       player = black_jack_session.participant_player)
-    p black_jack_round
+    pp black_jack_round
+    dealer = black_jack_round.participant_dealer
+    player = black_jack_round.participant_player
+    dealer.deal_card_to(player)
+    dealer.deal_card_to(dealer)
+    dealer.deal_card_to(player)
+    dealer.deal_card_to(dealer)
 
+    # black_jack_round.participant_dealer.deal_card_to(:dealer)
+    pp black_jack_round
+    # black_jack_round.participant_dealer.acquire_full_and_shuffled_deck
+    # pp black_jack_round.participant_dealer
     # return
   end
 
@@ -79,7 +89,7 @@ class BlackJackSession
       self.participant_player = "computer"
     when "p" then
       self.participant_dealer = "computer"
-      self.participant_player = "dealer"
+      self.participant_player = "human"
     else
     end
   end
@@ -90,18 +100,21 @@ class BlackJackSession
 end
 
 class BlackJackRound
-  def initialize(dealer, player)
-    @participant_dealer = dealer
-    @participant_player = player
+  attr_reader :participant_dealer, :participant_player
+  def initialize(dealer_human_or_computer, player_human_or_computer)
+    @participant_dealer = Dealer.new(dealer_human_or_computer)
+    @participant_player = Player.new(player_human_or_computer)
   end
 end
 
 class BlackJackParticipant
-  # def initialize
-  #   @hand
-  # end
+  def initialize(human_or_computer)
+    @human_or_computer = human_or_computer
+    @hand = []
+  end
 
-  def choose_hit
+  def choose_hit card_to_add
+    @hand << card_to_add
   end
 
   def choose_stay
@@ -112,8 +125,24 @@ end
 class Dealer < BlackJackParticipant
   attr_reader :deck
 
-  def initialize
+  def initialize(role_human_or_computer)
+    super(role_human_or_computer)
     @deck = []
+    acquire_full_and_shuffled_deck()
+  end
+
+  def deal_card_to(participant)
+    participant.choose_hit(@deck.shift())
+    # raise StandardError, "incorrect error" unless target == :dealer || :player
+    # case participant
+    # when :dealer
+    #   # @hand << @deck.shift()
+    #   choose_hit(@deck.shift())
+    # when :player
+    #   raise ArgumentError, "haven't coded this yet!"
+    # else
+    #   raise ArgumentError, "not valid input"
+    # end
   end
 
   def acquire_full_and_shuffled_deck
