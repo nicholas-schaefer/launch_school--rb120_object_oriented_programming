@@ -49,16 +49,22 @@ class PersonAtCasino
     black_jack_round = BlackJackRound.new(
       dealer = black_jack_session.participant_dealer,
       player = black_jack_session.participant_player)
-    pp black_jack_round
+    # pp black_jack_round
     dealer = black_jack_round.participant_dealer
     player = black_jack_round.participant_player
-    dealer.deal_card_to(player)
-    dealer.deal_card_to(dealer)
-    dealer.deal_card_to(player)
-    dealer.deal_card_to(dealer)
+    dealer.deal_card_to(:player, :visible, black_jack_round)
+    dealer.deal_card_to(:dealer, :hidden, black_jack_round)
+    dealer.deal_card_to(:player, :visible, black_jack_round)
+    dealer.deal_card_to(:dealer, :visible, black_jack_round)
+    # player.my_knowledge_of_cards()
+    dealer.my_knowledge_of_cards()
+
+
+    # dealer.deal_card_to(player)
+    # dealer.deal_card_to(dealer)
 
     # black_jack_round.participant_dealer.deal_card_to(:dealer)
-    pp black_jack_round
+    # pp black_jack_round
     # black_jack_round.participant_dealer.acquire_full_and_shuffled_deck
     # pp black_jack_round.participant_dealer
     # return
@@ -108,13 +114,27 @@ class BlackJackRound
 end
 
 class BlackJackParticipant
+  attr_reader :hand, :opponents_hand
   def initialize(human_or_computer)
     @human_or_computer = human_or_computer
     @hand = []
+    @opponents_hand = []
   end
 
-  def choose_hit card_to_add
+  def add_to_viewable_opponents_hand(card_to_add)
+    @opponents_hand << card_to_add
+  end
+
+  def choose_hit(card_to_add)
     @hand << card_to_add
+  end
+
+  def my_knowledge_of_cards
+    puts "My hand is this:"
+    p @hand
+    puts "My opponent's hand is showing this:"
+    p @opponents_hand
+    puts "----------"
   end
 
   def choose_stay
@@ -131,18 +151,20 @@ class Dealer < BlackJackParticipant
     acquire_full_and_shuffled_deck()
   end
 
-  def deal_card_to(participant)
-    participant.choose_hit(@deck.shift())
-    # raise StandardError, "incorrect error" unless target == :dealer || :player
-    # case participant
-    # when :dealer
-    #   # @hand << @deck.shift()
-    #   choose_hit(@deck.shift())
-    # when :player
-    #   raise ArgumentError, "haven't coded this yet!"
-    # else
-    #   raise ArgumentError, "not valid input"
-    # end
+  def deal_card_to(recipient, visibility, black_jack_round)
+    raise ArgumentError, "incorrect participant" unless recipient == :dealer || :player
+    raise ArgumentError, "incorrect visibility" unless visibility == :visible || :hidden
+    top_of_deck_card = @deck.shift()
+    case recipient
+    when :dealer
+      black_jack_round.participant_dealer.choose_hit(top_of_deck_card)
+      black_jack_round.participant_player.add_to_viewable_opponents_hand(top_of_deck_card) if visibility == :visible
+    when :player
+      black_jack_round.participant_player.choose_hit(top_of_deck_card)
+      black_jack_round.participant_dealer.add_to_viewable_opponents_hand(top_of_deck_card) if visibility == :visible
+    else
+      raise ArgumentError, "not valid input"
+    end
   end
 
   def acquire_full_and_shuffled_deck
